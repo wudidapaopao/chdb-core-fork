@@ -205,7 +205,7 @@ bool isClickhouseApp(std::string_view app_suffix, std::vector<char *> & argv)
 #if USE_JEMALLOC && defined(NDEBUG) && !defined(SANITIZER)
 extern "C" void (*je_malloc_message)(void *, const char *s);
 __attribute__((constructor(0))) void init_je_malloc_message() { je_malloc_message = [](void *, const char *){}; }
-+elif USE_JEMALLOC
+elif USE_JEMALLOC
 #include <unordered_set>
 /// Ignore messages which can be safely ignored, e.g. EAGAIN on pthread_create
 extern "C" void (*malloc_message)(void *, const char * s);

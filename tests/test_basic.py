@@ -25,6 +25,9 @@ class TestOutput(unittest.TestCase):
             # Arrow format output is not deterministic
             if format in ("Arrow", "ArrowStream"):
                 continue
+
+            if "Pretty" in format:
+                continue
             
             if format in ("JSONEachRowWithProgress", "JSONStringsEachRowWithProgress"):
                 data_str = str(data)

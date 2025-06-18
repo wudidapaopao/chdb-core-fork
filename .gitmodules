@@ -374,7 +374,7 @@
 	url = https://github.com/brainhub/SHA3IUF.git
 [submodule "contrib/arrow"]
 	path = contrib/arrow
-	url = https://github.com/chdb-io/arrow.git 
+	url = https://github.com/chdb-io/arrow.git
 [submodule "contrib/utf8proc"]
 	path = contrib/utf8proc
 	url = https://github.com/JuliaStrings/utf8proc.git

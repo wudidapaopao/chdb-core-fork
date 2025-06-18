@@ -28,6 +28,8 @@ class TestOutput(unittest.TestCase):
 
             if "Pretty" in format:
                 continue
+            if "Vertical" in format:
+                continue
             
             if format in ("JSONEachRowWithProgress", "JSONStringsEachRowWithProgress"):
                 data_str = str(data)

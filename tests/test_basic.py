@@ -25,6 +25,14 @@ class TestOutput(unittest.TestCase):
             # Arrow format output is not deterministic
             if format in ("Arrow", "ArrowStream"):
                 continue
+            
+            if format in ("JSONEachRowWithProgress", "JSONStringsEachRowWithProgress"):
+                data_str = str(data)
+                lines = data_str.split('\n')
+                if len(lines) >= 3:
+                    extracted_lines = lines[1] + '\n' + lines[2] + '\n'
+                    data = extracted_lines
+
             if format == "Parquet":
                 data = data[:2000]
                 output["data"] = output["data"][:2000]

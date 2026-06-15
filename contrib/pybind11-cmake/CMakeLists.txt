@@ -47,6 +47,29 @@ message(STATUS "Using stable-ABI pybind11 from ${LIBRARY_DIR}")
 
 set(PYBIND11_LIB_SUFFIX "chdb")
 
+# chdb_spec: On macOS the pybind11 stub/shim dylibs below statically link
+# ClickHouse's bundled libcxx (contrib/libcxx). Without hiding, libcxx's
+# std::__1::* methods (e.g. std::__1::basic_string) are emitted as *weak
+# external* symbols and take part in macOS weak-symbol coalescing. If another
+# extension that bundles its own libc++ (e.g. numba/llvmlite) is imported
+# before chdb, its libc++ wins coalescing and chdb's std::string operations
+# bind to an ABI-incompatible implementation, corrupting memory inside
+# pybind11 non-limited-api EnsureSharedLibraryIsLoaded() (observed as a garbled
+# dlopen path and an import-time abort). The main _chdb.abi3.so already hides
+# these symbols; these two standalone targets did not. Strip std::__1 symbols
+# from the export tables so each library binds to its own statically linked
+# libcxx internally.
+if (APPLE)
+    set(CHDB_PYBIND11_DARWIN_UNEXPORTED "${CMAKE_CURRENT_BINARY_DIR}/darwin_unexported_libcxx_symbols.txt")
+    file(WRITE "${CHDB_PYBIND11_DARWIN_UNEXPORTED}"
+"__ZNSt3__1*
+__ZNKSt3__1*
+__ZTVNSt3__1*
+__ZTINSt3__1*
+__ZTSNSt3__1*
+")
+endif()
+
 # Build the main pybind11nonlimitedapi_stubs library
 set(STUBS_SOURCES
     "${LIBRARY_DIR}/source/non_limited_api/non_limited_api_stubs.cpp"
@@ -81,6 +104,9 @@ set_target_properties(pybind11_stubs PROPERTIES
 
 if (APPLE)
     target_link_options(pybind11_stubs PRIVATE -undefined dynamic_lookup)
+    if (CHDB_PYBIND11_DARWIN_UNEXPORTED)
+        target_link_options(pybind11_stubs PRIVATE "-Wl,-unexported_symbols_list,${CHDB_PYBIND11_DARWIN_UNEXPORTED}")
+    endif()
 else()
     target_link_options(pybind11_stubs PRIVATE -Wl,--unresolved-symbols=ignore-all)
     if (USE_MUSL)
@@ -123,6 +149,9 @@ if(Python_FOUND OR CHDB_CROSSCOMPILING)
 
     if (APPLE)
         target_link_options(${PYBIND11_NONLIMITEDAPI_LIBNAME} PRIVATE -undefined dynamic_lookup)
+        if (CHDB_PYBIND11_DARWIN_UNEXPORTED)
+            target_link_options(${PYBIND11_NONLIMITEDAPI_LIBNAME} PRIVATE "-Wl,-unexported_symbols_list,${CHDB_PYBIND11_DARWIN_UNEXPORTED}")
+        endif()
     else()
         target_link_options(${PYBIND11_NONLIMITEDAPI_LIBNAME} PRIVATE -Wl,--unresolved-symbols=ignore-all)
         if (USE_MUSL)
